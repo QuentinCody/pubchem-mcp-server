@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "pubchem-mcp-server" generated at 2026-03-14T19:47:44.237Z.
