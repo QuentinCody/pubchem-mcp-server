@@ -139,7 +139,7 @@ export const pubchemCatalog: ApiCatalog = {
         {
             method: "GET",
             path: "/compound/name/{name}/description/JSON",
-            summary: "Get textual descriptions for a compound by name",
+            summary: "Get textual descriptions for a compound by name. Returns InformationList.Information[] — iterate to find entries with a Description field (not all entries have one).",
             category: "compound",
             pathParams: [
                 {
