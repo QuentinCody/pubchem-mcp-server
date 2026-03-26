@@ -6,7 +6,7 @@ interface SchemaEnv {
     PUBCHEM_DATA_DO?: unknown;
 }
 
-export function registerGetSchema(server: McpServer, env?: SchemaEnv) {
+export function registerGetSchema(server: McpServer, env?: SchemaEnv): void {
     const handler = createGetSchemaHandler("PUBCHEM_DATA_DO", "pubchem");
 
     server.registerTool(

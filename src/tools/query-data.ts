@@ -6,7 +6,7 @@ interface QueryEnv {
     PUBCHEM_DATA_DO?: unknown;
 }
 
-export function registerQueryData(server: McpServer, env?: QueryEnv) {
+export function registerQueryData(server: McpServer, env?: QueryEnv): void {
     const handler = createQueryDataHandler("PUBCHEM_DATA_DO", "pubchem");
 
     server.registerTool(
