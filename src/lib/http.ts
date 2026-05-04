@@ -90,9 +90,7 @@ export async function pubchemFetch(
                 const pollUrl = `${baseUrl}/compound/listkey/${listKey}/cids/JSON`;
                 return pollAsyncResult(pollUrl, opts);
             }
-        } catch {
-            // If we can't parse the 202 body, return the original response
-        }
+        } catch { /* best-effort: If we can't parse the 202 body, return the original response */ }
         return response;
     }
 
@@ -137,9 +135,7 @@ export async function pubchemPost(
                 const pollUrl = `${baseUrl}/compound/listkey/${listKey}/cids/JSON`;
                 return pollAsyncResult(pollUrl, opts);
             }
-        } catch {
-            // If we can't parse the 202 body, return the original response
-        }
+        } catch { /* best-effort: If we can't parse the 202 body, return the original response */ }
         return response;
     }
 
