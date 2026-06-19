@@ -35,6 +35,8 @@ export function registerCodeMode(
     // Register the execute tool (V8 isolate via DynamicWorkerExecutor)
     const executeTool = createExecuteTool({
         prefix: "pubchem",
+        // Verifiable provenance: pubchem_execute results carry a _meta.citation.
+        source: { id: "pubchem", name: "PubChem", url: "https://pubchem.ncbi.nlm.nih.gov", license: "U.S. Public Domain" },
         catalog: pubchemCatalog,
         apiFetch,
         doNamespace: env.PUBCHEM_DATA_DO,
