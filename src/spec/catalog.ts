@@ -3,168 +3,33 @@
  * https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest and
  * https://pubchem.ncbi.nlm.nih.gov/docs/pug-view
  *
- * Covers ~30 endpoints across 6 categories: compound, assay, substance,
- * property, similarity, and xref.
- *
  * Virtual path convention:
  *   - PUG REST paths start with /compound, /assay, /substance
  *   - PUG View paths start with /pug_view
  *   - The api-adapter routes /pug_view/* to the PUG View base URL,
  *     everything else to the PUG REST base URL.
- *   - All paths end with /JSON to request JSON output.
+ *   - IdentifierTypes uses /TXT; other catalog paths request /JSON.
  */
 
 import type { ApiCatalog } from "@bio-mcp/shared/codemode/catalog";
+import { targetEndpoints } from "./targets";
+import { pubchemNotes } from "./notes";
+import { compoundEndpoints } from "./compound";
+import { postEndpoints } from "./post";
+import { cellAssayWorkflow } from "./cell-assay";
 
 export const pubchemCatalog: ApiCatalog = {
     name: "PubChem PUG REST",
     baseUrl: "https://pubchem.ncbi.nlm.nih.gov/rest/pug",
     version: "1.0",
     auth: "none",
-    endpointCount: 31,
-    notes:
-        "- PUG REST URL pattern: /pug/{domain}/{namespace}/{identifiers}/{operation}/{output}\n" +
-        "- All paths in this catalog are relative to the PUG REST base URL, except /pug_view/* which route to PUG View\n" +
-        "- Append /JSON to all paths for JSON output (already included in catalog paths)\n" +
-        "- Rate limit: 5 requests/second — add 200ms delay between requests in loops\n" +
-        "- No authentication required\n" +
-        "- Compound identifiers: CID (integer), name (string), SMILES (string), InChIKey (string)\n" +
-        "- Common properties (comma-separated for property endpoints): MolecularWeight, MolecularFormula, XLogP, TPSA, " +
-        "HBondDonorCount, HBondAcceptorCount, RotatableBondCount, ExactMass, MonoisotopicMass, " +
-        "InChI, InChIKey, CanonicalSMILES, IsomericSMILES, IUPACName, Charge, Complexity, " +
-        "HeavyAtomCount, AtomStereoCount, BondStereoCount, CovalentUnitCount\n" +
-        "- Multiple properties can be requested comma-separated: 'MolecularWeight,XLogP,TPSA'\n" +
-        "- Similarity/substructure searches may return 202 with a ListKey for async polling — the http client handles this automatically\n" +
-        "- For SMILES with special characters, URL-encode them or use POST variants\n" +
-        "- PUG View returns richly structured compound records with sections (Safety, Pharmacology, etc.)\n" +
-        "- Substance (SID) vs Compound (CID): Substances are depositor-provided records, Compounds are standardized\n" +
-        "- Maximum 100 CIDs per property request, 100 SIDs per substance request",
+    endpointCount: 31 + targetEndpoints.length + postEndpoints.length,
+    notes: pubchemNotes,
+    workflows: [cellAssayWorkflow],
     endpoints: [
-        // === Compound Lookup ===
-        {
-            method: "GET",
-            path: "/compound/name/{name}/JSON",
-            summary: "Get compound record by name (returns full PUG compound data)",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "name",
-                    type: "string",
-                    required: true,
-                    description: "Compound name (e.g. aspirin, ibuprofen, glucose)",
-                },
-            ],
-        },
-        {
-            method: "GET",
-            path: "/compound/cid/{cid}/JSON",
-            summary: "Get compound record by PubChem CID",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "cid",
-                    type: "number",
-                    required: true,
-                    description: "PubChem Compound ID (e.g. 2244 for aspirin)",
-                },
-            ],
-        },
-        {
-            method: "GET",
-            path: "/compound/smiles/{smiles}/JSON",
-            summary: "Get compound record by SMILES string",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "smiles",
-                    type: "string",
-                    required: true,
-                    description:
-                        "SMILES string (URL-encode special chars, e.g. CC(=O)Oc1ccccc1C(=O)O for aspirin)",
-                },
-            ],
-        },
-        {
-            method: "GET",
-            path: "/compound/inchikey/{inchikey}/JSON",
-            summary: "Get compound record by InChIKey",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "inchikey",
-                    type: "string",
-                    required: true,
-                    description:
-                        "InChIKey string (e.g. BSYNRYMUTXBXSQ-UHFFFAOYSA-N for aspirin)",
-                },
-            ],
-        },
-        {
-            method: "GET",
-            path: "/compound/cid/{cids}/cids/JSON",
-            summary: "Get CIDs for a comma-separated list of CIDs (useful for validating CIDs)",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "cids",
-                    type: "string",
-                    required: true,
-                    description: "Comma-separated CIDs (e.g. 2244,3672)",
-                },
-            ],
-        },
-        {
-            method: "GET",
-            path: "/compound/name/{name}/cids/JSON",
-            summary: "Get CID(s) for a compound name (lightweight — returns only CIDs)",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "name",
-                    type: "string",
-                    required: true,
-                    description: "Compound name",
-                },
-            ],
-            queryParams: [
-                {
-                    name: "name_type",
-                    type: "string",
-                    required: false,
-                    description: "Name matching type",
-                    enum: ["word", "complete"],
-                },
-            ],
-        },
-        {
-            method: "GET",
-            path: "/compound/name/{name}/description/JSON",
-            summary: "Get textual descriptions for a compound by name. Returns InformationList.Information[] — iterate to find entries with a Description field (not all entries have one).",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "name",
-                    type: "string",
-                    required: true,
-                    description: "Compound name",
-                },
-            ],
-        },
-        {
-            method: "GET",
-            path: "/compound/cid/{cid}/description/JSON",
-            summary: "Get textual descriptions for a compound by CID",
-            category: "compound",
-            pathParams: [
-                {
-                    name: "cid",
-                    type: "number",
-                    required: true,
-                    description: "PubChem Compound ID",
-                },
-            ],
-        },
-
+        ...targetEndpoints,
+        ...compoundEndpoints,
+        ...postEndpoints,
         // === Synonyms ===
         {
             method: "GET",

@@ -5,10 +5,22 @@
  */
 
 import { RestStagingDO } from "@bio-mcp/shared/staging/rest-staging-do";
-import type { SchemaHints } from "@bio-mcp/shared/staging/schema-inference";
+import { detectArrays, inferSchema, type SchemaHints } from "@bio-mcp/shared/staging/schema-inference";
 
 export class PubchemDataDO extends RestStagingDO {
     protected getSchemaHints(data: unknown): SchemaHints | undefined {
+        const arrays = detectArrays(data);
+        // A global name would merge unrelated collections. Index only columns
+        // the production materializer will actually create for a sparse response.
+        if (arrays.length !== 1) return undefined;
+        const hints = this.nativeHints(data);
+        if (!hints) return undefined;
+        const schema = inferSchema(arrays, { ...hints, indexes: [] });
+        const columns = new Set(schema.tables[0]?.columns.map(column => column.name));
+        return { ...hints, indexes: hints.indexes?.filter(index => columns.has(index)) };
+    }
+
+    private nativeHints(data: unknown): SchemaHints | undefined {
         if (!data || typeof data !== "object") return undefined;
 
         const obj = data as Record<string, unknown>;
